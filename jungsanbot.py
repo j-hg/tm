@@ -130,7 +130,7 @@ def get_detail_embed(info : dict = {}):
 	# "before_jungsan_ID" : list = 참석명단(분배전)
 	# "after_jungsan_ID" : list = 참석명단(분배후)
 	# "modifydate" : datetime = 수정날짜
-	# "gulid_money_insert" : bool = 혈비등록여부
+	# "gulid_money_insert" : bool = 길비등록여부
 	# "bank_money_insert" : bool = 은행입금여부
 	# "image_url":이미지 url
 
@@ -148,7 +148,7 @@ def get_detail_embed(info : dict = {}):
 	embed.add_field(name = "[ 상태 ]", value = f"```{info['itemstatus']}```")
 	embed.add_field(name = "[ 판매금 ]", value = f"```{info['price']}```")
 	if int(basicSetting[8]) != 0 and info['bank_money_insert']:
-		embed.add_field(name = "[ 혈비적립 ]", value = f"```{info['price'] - (info['each_price'] * (len(info['before_jungsan_ID'])+len(info['after_jungsan_ID'])))}```")
+		embed.add_field(name = "[ 비적립 ]", value = f"```{info['price'] - (info['each_price'] * (len(info['before_jungsan_ID'])+len(info['after_jungsan_ID'])))}```")
 	if info['itemstatus'] in ["분배완료", "분배중"]:
 		embed.add_field(name = "[ 인당금액 ]", value = f"```{info['each_price']}```")
 	if info['before_jungsan_ID']:
@@ -274,14 +274,14 @@ class IlsangDistributionBot(commands.AutoShardedBot):
 				result_guild_log = self.db.jungsan.guild_log.insert_one(insert_log_data)
 
 				embed = discord.Embed(
-						title = f"💰  혈비 자동 적립 ({(datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9]))).strftime('%y-%m-%d %H:%M:%S')})",
+						title = f"💰  길비 자동 적립 ({(datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9]))).strftime('%y-%m-%d %H:%M:%S')})",
 						description = f"",
 						color=0x00ff00
 						)
 				embed.add_field(name = f"**삭제순번**", value = f"**```fix\n{' '.join(tmp)}```**", inline = False)
 				embed.add_field(name = f"**적립**", value = f"**```fix\n{total_save_money}```**")
-				embed.add_field(name = f"**혈비**", value = f"**```fix\n{total_guild_money['guild_money']}```**")
-				embed.set_footer(text = f"기간({basicSetting[4]}일) 경과로 인하여 총 {cnt}건 혈비 자동적립 완료\n(총 혈비 {total_guild_money['guild_money']})")
+				embed.add_field(name = f"**길비**", value = f"**```fix\n{total_guild_money['guild_money']}```**")
+				embed.set_footer(text = f"기간({basicSetting[4]}일) 경과로 인하여 총 {cnt}건 비 자동적립 완료\n(총 길비 {total_guild_money['guild_money']})")
 
 				await self.get_channel(int(basicSetting[6])).send(embed = embed)
 
@@ -393,7 +393,7 @@ class settingCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[40][0]} [숫자]** 양식으로 등록 해주세요")
@@ -422,7 +422,7 @@ class settingCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[41][0]} [숫자]** 양식으로 등록 해주세요")
@@ -439,7 +439,7 @@ class settingCog(commands.Cog):
 
 		return  await ctx.send(f"이모지 확인 시간을 **[{args}]**초로 설정 하였습니다.")
 
-	################ 혈비적립 수수료 설정 ################ 
+	################ 길비적립 수수료 설정 ################ 
 	@is_manager()
 	@commands.command(name=commandSetting[56][0], aliases=commandSetting[56][1:])
 	async def set_guild_tax(self, ctx, *, args : str = None):
@@ -451,7 +451,7 @@ class settingCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[56][0]} [숫자]** 양식으로 등록 해주세요")
@@ -459,14 +459,14 @@ class settingCog(commands.Cog):
 		try:
 			args = int(args)
 		except ValueError:
-			return await ctx.send(f"**혈비적립 수수료는 [숫자]** 로 입력 해주세요")
+			return await ctx.send(f"**길비적립 수수료는 [숫자]** 로 입력 해주세요")
 
 		basicSetting[8] = args
 		result = self.guild_db.update_one({"_id":"guild"}, {"$set":{"guild_save_tax":args}}, upsert = True)
 		if result.raw_result["nModified"] < 1 and "upserted" not in result.raw_result:
-			return await ctx.send(f"{ctx.author.mention}, 혈비적립 수수료 설정 실패.")   
+			return await ctx.send(f"{ctx.author.mention}, 길비적립 수수료 설정 실패.")   
 
-		return  await ctx.send(f"혈비적립 수수료를 **[{args}%]**로 설정 하였습니다.")
+		return  await ctx.send(f"길비적립 수수료를 **[{args}%]**로 설정 하였습니다.")
 
 	################ 세금 설정 ################ 
 	@is_manager()
@@ -480,7 +480,7 @@ class settingCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[42][0]} [숫자]** 양식으로 등록 해주세요")
@@ -516,7 +516,7 @@ class adminCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		embed = discord.Embed(
 			title = f"⚙️ 기본 설정(Server v13)",
@@ -524,7 +524,7 @@ class adminCog(commands.Cog):
 			)
 		embed.add_field(name = f"🚫 삭제 주기", value = f"```{basicSetting[4]} 일```")
 		embed.add_field(name = f"⌛ 체크 시간", value = f"```{basicSetting[5]} 초```")
-		embed.add_field(name = f"🏧 혈비적립", value = f"```{basicSetting[8]} %```")
+		embed.add_field(name = f"🏧 길비적립", value = f"```{basicSetting[8]} %```")
 		embed.add_field(name = f"⚖️ 수수료", value = f"```{basicSetting[7]} %```")
 		embed.add_field(name = f"🗨️ 명령 채널", value = f"```{ctx.message.channel.name}```")
 		return await ctx.send(embed = embed, tts=False)
@@ -568,39 +568,39 @@ class adminCog(commands.Cog):
 			admin_command_list += f"{','.join(commandSetting[5])} [아이디]\n"   # 총무삭제
 			
 			manager_command_list : str = ""
-			manager_command_list += f"{','.join(commandSetting[0])}  ※ 관리자권한도 필요\n"   # 혈원데이터초기화
+			manager_command_list += f"{','.join(commandSetting[0])}  ※ 관리자권한도 필요\n"   # 길원데이터초기화
 			manager_command_list += f"{','.join(commandSetting[1])}  ※ 관리자권한도 필요\n"   # 정산데이터초기화
-			manager_command_list += f"{','.join(commandSetting[2])}  ※ 관리자권한도 필요\n"   # 혈비데이터초기화
+			manager_command_list += f"{','.join(commandSetting[2])}  ※ 관리자권한도 필요\n"   # 길비데이터초기화
 			manager_command_list += f"{','.join(commandSetting[3])}  ※ 관리자권한도 필요\n"   # 백업데이터초기화
 			manager_command_list += f"{','.join(commandSetting[40])} [숫자(일)]\n"   # 삭제주기설정
 			manager_command_list += f"{','.join(commandSetting[41])} [숫자(초)]\n"   # 확인시간설정
-			manager_command_list += f"{','.join(commandSetting[56])} [숫자(%)]\n"   # 혈비수수료설정
+			manager_command_list += f"{','.join(commandSetting[56])} [숫자(%)]\n"   # 길비수수료설정
 			manager_command_list += f"{','.join(commandSetting[42])} [숫자(%)]\n"   # 세금설정
-			manager_command_list += f"{','.join(commandSetting[47])}  ※ 30일 이후 데이터는 삭제됨\n"   # 혈비로그확인
+			manager_command_list += f"{','.join(commandSetting[47])}  ※ 30일 이후 데이터는 삭제됨\n"   # 길비로그확인
 			manager_command_list += f"{','.join(commandSetting[43])} (상세)\n"   # 전체확인
 			manager_command_list += f"{','.join(commandSetting[43])} (상세) (검색조건) (검색값)\n"   # 전체확인
-			manager_command_list += f"{','.join(commandSetting[55])} [아이디]\n"   # 혈원정보
-			manager_command_list += f"{','.join(commandSetting[9])} [아이디] [디스코드ID]\n"   # 혈원입력
-			manager_command_list += f"{','.join(commandSetting[54])} [변경아이디] [디스코드ID]\n"   # 혈원변경
-			manager_command_list += f"{','.join(commandSetting[10])} [아이디]\n"   # 혈원삭제
+			manager_command_list += f"{','.join(commandSetting[55])} [아이디]\n"   # 길원정보
+			manager_command_list += f"{','.join(commandSetting[9])} [아이디] [디스코드ID]\n"   # 길원입력
+			manager_command_list += f"{','.join(commandSetting[54])} [변경아이디] [디스코드ID]\n"   # 길원변경
+			manager_command_list += f"{','.join(commandSetting[10])} [아이디]\n"   # 길원삭제
 			manager_command_list += f"{','.join(commandSetting[30])} [금액] [아이디1] [아이디2]...\n"   # 은행입금
 			manager_command_list += f"{','.join(commandSetting[31])} [금액] [아이디1] [아이디2]...\n"   # 은행출금
-			manager_command_list += f"{','.join(commandSetting[32])} [금액] (*사유)\n"   # 혈비입금
-			manager_command_list += f"{','.join(commandSetting[49])} [금액] *[사유]\n"   # 혈비출금
-			manager_command_list += f"{','.join(commandSetting[33])} [금액] [아이디1] [아이디2]... *[사유]\n"   # 혈비지원
+			manager_command_list += f"{','.join(commandSetting[32])} [금액] (*사유)\n"   # 길비입금
+			manager_command_list += f"{','.join(commandSetting[49])} [금액] *[사유]\n"   # 길비출금
+			manager_command_list += f"{','.join(commandSetting[33])} [금액] [아이디1] [아이디2]... *[사유]\n"   # 길비지원
 			manager_command_list += f"{','.join(commandSetting[53])} [순번] [변경아이디]\n"   # 등록자수정
 
 			member_command_list : str = ""
-			member_command_list += f"{','.join(commandSetting[6])}\n"   # 혈원
-			member_command_list += f"{','.join(commandSetting[7])} [아이디]\n"   # 혈원등록
-			member_command_list += f"{','.join(commandSetting[8])} [아이디]\n\n"   # 혈원수정
+			member_command_list += f"{','.join(commandSetting[6])}\n"   # 길원
+			member_command_list += f"{','.join(commandSetting[7])} [아이디]\n"   # 길원등록
+			member_command_list += f"{','.join(commandSetting[8])} [아이디]\n\n"   # 길원수정
 			
 			member_command_list += f"{','.join(commandSetting[28])}\n"   # 계좌
 			member_command_list += f"{','.join(commandSetting[44])} (아이템명)\n"   # 창고
 			member_command_list += f"{','.join(commandSetting[11])}\n\n"   # 정산확인
 			
-			member_command_list += f"{','.join(commandSetting[12])} [보스명] [아이템] [루팅자] [아이디1] [아이디2] ... (참고이미지 url)\n"   # 등록
-			member_command_list += f"{','.join(commandSetting[52])} [보스명] [아이템] [루팅자] [뽑을인원] [아이디1] [아이디2] ... (참고이미지 url)\n\n"   # 뽑기등록
+			member_command_list += f"{','.join(commandSetting[12])} [보스명] [아이템] [루팅자] [아이디1] [아이디2] ... \n"   # 등록
+			member_command_list += f"{','.join(commandSetting[52])} [보스명] [아이템] [루팅자] [뽑을인원] [아이디1] [아이디2] ... \n\n"   # 뽑기등록
 			member_command_list += f"----- 등록자만 가능 -----\n"   # 등록자
 			member_command_list += f"{','.join(commandSetting[13])} (상세)\n"   # 등록확인1
 			member_command_list += f"{','.join(commandSetting[13])} (상세) (검색조건) (검색값)\n"   # 등록확인2
@@ -658,11 +658,11 @@ class adminCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		emoji_list : list = ["⭕", "❌"]
 
-		delete_warning_message = await ctx.send(f"**혈원데이터를 초기화 하시면 다시는 복구할 수 없습니다. 정말로 초기화하시겠습니까?**\n**초기화 : ⭕ 취소: ❌**\n({int(basicSetting[5])*2}초 동안 입력이 없을시 초기화가 취소됩니다.)", tts=False)
+		delete_warning_message = await ctx.send(f"**길원데이터를 초기화 하시면 다시는 복구할 수 없습니다. 정말로 초기화하시겠습니까?**\n**초기화 : ⭕ 취소: ❌**\n({int(basicSetting[5])*2}초 동안 입력이 없을시 초기화가 취소됩니다.)", tts=False)
 		
 		for emoji in emoji_list:
 			await delete_warning_message.add_reaction(emoji)
@@ -679,8 +679,8 @@ class adminCog(commands.Cog):
 
 		if str(reaction) == "⭕":
 			self.member_db.delete_many({})
-			print(f"< 혈원데이터 초기화 완료 >")
-			return await ctx.send(f"☠️ 혈원데이터 초기화 완료! ☠️")
+			print(f"< 길원데이터 초기화 완료 >")
+			return await ctx.send(f"☠️ 길원데이터 초기화 완료! ☠️")
 		else:
 			return await ctx.send(f"**초기화**가 취소되었습니다.\n")		
 
@@ -695,7 +695,7 @@ class adminCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		emoji_list : list = ["⭕", "❌"]
 
@@ -733,11 +733,11 @@ class adminCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		emoji_list : list = ["⭕", "❌"]
 
-		delete_warning_message = await ctx.send(f"**혈비데이터를 초기화 하시면 다시는 복구할 수 없습니다. 정말로 초기화하시겠습니까?**\n**초기화 : ⭕ 취소: ❌**\n({int(basicSetting[5])*2}초 동안 입력이 없을시 초기화가 취소됩니다.)", tts=False)
+		delete_warning_message = await ctx.send(f"**길비데이터를 초기화 하시면 다시는 복구할 수 없습니다. 정말로 초기화하시겠습니까?**\n**초기화 : ⭕ 취소: ❌**\n({int(basicSetting[5])*2}초 동안 입력이 없을시 초기화가 취소됩니다.)", tts=False)
 		
 		for emoji in emoji_list:
 			await delete_warning_message.add_reaction(emoji)
@@ -777,8 +777,8 @@ class adminCog(commands.Cog):
 			# basicSetting[7] = tax
 			# basicSetting[8] = guild_save_tax
 
-			print(f"< 혈비/로그 데이터 초기화 완료 >")
-			return await ctx.send(f"☠️ 혈비/로그 데이터 초기화 완료! ☠️\n**[{commandSetting[36][0]}]** 명령어를 입력하신 후 사용해주시기 바랍니다.")
+			print(f"< 길비/로그 데이터 초기화 완료 >")
+			return await ctx.send(f"☠️ 길비/로그 데이터 초기화 완료! ☠️\n**[{commandSetting[36][0]}]** 명령어를 입력하신 후 사용해주시기 바랍니다.")
 		else:
 			return await ctx.send(f"**초기화**가 취소되었습니다.\n")	
 
@@ -793,7 +793,7 @@ class adminCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		emoji_list : list = ["⭕", "❌"]
 
@@ -819,7 +819,7 @@ class adminCog(commands.Cog):
 		else:
 			return await ctx.send(f"**초기화**가 취소되었습니다.\n")
 
-	################ 혈비로그확인 ################ 
+	################ 길비로그확인 ################ 
 	@is_manager()
 	@commands.command(name=commandSetting[47][0], aliases=commandSetting[47][1:])
 	async def guild_log_load(self, ctx, *, args : str = None):
@@ -829,7 +829,7 @@ class adminCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if args:
 			return await ctx.send(f"**{commandSetting[47][0]}** 양식으로 등록 해주세요")
@@ -839,7 +839,7 @@ class adminCog(commands.Cog):
 		result = list(self.guild_db_log.find({}))
 
 		if len(result) == 0:
-			return await ctx.send(f"```혈비 로그가 없습니다!```")
+			return await ctx.send(f"```길비 로그가 없습니다!```")
 
 		sorted_result = sorted(list([result_data['log_date'] for result_data in result]))
 
@@ -854,7 +854,7 @@ class adminCog(commands.Cog):
 		detail_info	: str = ""
 		
 		embed = discord.Embed(
-					title = f"📜 혈비 로그",
+					title = f"📜 길비 로그",
 					description = "",
 					color=0x00ff00
 					)
@@ -881,7 +881,7 @@ class adminCog(commands.Cog):
 							else:
 								detail_info += f"+ 💰 {result_data1['money']} : {', '.join(result_data1['member_list'])} (사유 : {result_data1['reason']})\n"
 						else:
-							detail_info += f"+ 💰 {result_data1['money']} : 혈비 입금\n"
+							detail_info += f"+ 💰 {result_data1['money']} : 길비 입금\n"
 					else:
 						if result_data1['reason'] != "":
 							detail_info += f"- 💰 {result_data1['money']} : {', '.join(result_data1['member_list'])} (사유:{result_data1['reason']})\n"
@@ -919,7 +919,7 @@ class memberCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"game_ID":args})
 
 		if not member_data:
-			return await ctx.send(f"**[{args}]**님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"**[{args}]**님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[4][0]} [아이디]** 양식으로 등록 해주세요")
@@ -940,7 +940,7 @@ class memberCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"game_ID":args})
 
 		if not member_data:
-			return await ctx.send(f"**[{args}]**님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"**[{args}]**님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[5][0]} [아이디]** 양식으로 삭제 해주세요")
@@ -951,7 +951,7 @@ class memberCog(commands.Cog):
 
 		return  await ctx.send(f"**[{args}]**님을 총무에서 삭제 하였습니다.")
 
-	################ 혈원목록 확인 ################ 
+	################ 길원목록 확인 ################ 
 	@commands.command(name=commandSetting[6][0], aliases=commandSetting[6][1:])
 	async def member_list(self, ctx):
 		if ctx.message.channel.id != int(basicSetting[6]) or basicSetting[6] == "":
@@ -960,7 +960,7 @@ class memberCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		remain_guild_money : int = 0
 
@@ -993,7 +993,7 @@ class memberCog(commands.Cog):
 					member_list += f"{member_info['game_ID']} "
 
 		embed = discord.Embed(
-		title = "👥  혈원 목록",
+		title = "👥  길원 목록",
 		description = "",
 		color=0x00ff00
 		)
@@ -1002,16 +1002,16 @@ class memberCog(commands.Cog):
 		else:
 			embed.add_field(name = f"**🤴 총무**",value = f"**```cs\n{manager_list}```**")
 		if len(member_list) == 0:
-			embed.add_field(name = f"**🧑 혈원**",value = f"**```cs\n등록된 혈원이 없습니다.```**", inline = False)
+			embed.add_field(name = f"**🧑 길원**",value = f"**```cs\n등록된 길원이 없습니다.```**", inline = False)
 		else:
-			embed.add_field(name = f"**🧑 혈원**",value = f"**```cs\n{member_list}```**", inline = False)
-		embed.add_field(name = f"**👤 혈원수**",value = f"**```fix\n{len(sorted_member_document)}```**")
+			embed.add_field(name = f"**🧑 길원**",value = f"**```cs\n{member_list}```**", inline = False)
+		embed.add_field(name = f"**👤 길원수**",value = f"**```fix\n{len(sorted_member_document)}```**")
 		embed.add_field(name = f"**🏦 잔고**",value = f"**```fix\n{total_account}```**")
-		embed.add_field(name = f"**💰 혈비**",value = f"**```fix\n{remain_guild_money}```**")
+		embed.add_field(name = f"**💰 길비**",value = f"**```fix\n{remain_guild_money}```**")
 		#embed.set_footer(text = f"👑 표시는 총무!")
 		return await ctx.send(embed = embed)
 
-	################ 혈원아이디 등록 ################ 
+	################ 길원아이디 등록 ################ 
 	@commands.command(name=commandSetting[7][0], aliases=commandSetting[7][1:])
 	async def member_add(self, ctx, *, args : str = None):
 		if ctx.message.channel.id != int(basicSetting[6]) or basicSetting[6] == "":
@@ -1038,11 +1038,11 @@ class memberCog(commands.Cog):
 		# "account" : int = 은행잔고
 
 		if result.raw_result["nModified"] < 1 and "upserted" not in result.raw_result:
-			return await ctx.send(f"{ctx.author.mention}, 혈원 등록 실패.")   
+			return await ctx.send(f"{ctx.author.mention}, 길원 등록 실패.")   
 
-		return await ctx.send(f"{ctx.author.mention}님! **[{args}] [{ctx.author.id}]**(으)로 혈원 등록 완료!")
+		return await ctx.send(f"{ctx.author.mention}님! **[{args}] [{ctx.author.id}]**(으)로 길원 등록 완료!")
 
-	################ 혈원아이디 수정 ################ 
+	################ 길원아이디 수정 ################ 
 	@commands.command(name=commandSetting[8][0], aliases=commandSetting[8][1:])
 	async def member_modify(self, ctx, *, args : str = None):
 		if ctx.message.channel.id != int(basicSetting[6]) or basicSetting[6] == "":
@@ -1051,7 +1051,7 @@ class memberCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({ "_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[8][0]} [아이디]** 양식으로 수정 해주세요")
@@ -1102,7 +1102,7 @@ class memberCog(commands.Cog):
 
 		return await ctx.send(f"{ctx.author.mention}님, 아이디를 **[{member_data['game_ID']}]**에서 **[{args}]**로 변경하였습니다.")
 
-	################ 혈원아이디 정보 ################ 
+	################ 길원아이디 정보 ################ 
 	@commands.command(name=commandSetting[55][0], aliases=commandSetting[55][1:])
 	async def member_infomation(self, ctx, *, args : str = None):
 		if ctx.message.channel.id != int(basicSetting[6]) or basicSetting[6] == "":
@@ -1114,7 +1114,7 @@ class memberCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"game_ID":args})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		embed = discord.Embed(
 			title = f"👤 **[{member_data['game_ID']}]님의 정보**",
@@ -1124,12 +1124,12 @@ class memberCog(commands.Cog):
 		if member_data['permissions'] == "manager":
 			embed.add_field(name = "💪 권한", value = f"```fix\n총무```")
 		else:
-			embed.add_field(name = "💪 권한", value = f"```fix\n혈원```")
+			embed.add_field(name = "💪 권한", value = f"```fix\n길원```")
 		embed.add_field(name = "🏦 잔고", value = f"```fix\n{member_data['account']}```")
 
 		return await ctx.send(embed=embed)
 
-	################ 혈원아이디 입력 ################ 
+	################ 길원아이디 입력 ################ 
 	@is_manager()
 	@commands.command(name=commandSetting[9][0], aliases=commandSetting[9][1:])
 	async def member_input_add(self, ctx, *, args : str = None):
@@ -1156,11 +1156,11 @@ class memberCog(commands.Cog):
 
 		result = self.member_db.update_one({"_id":int(input_regist_data[1])}, {"$set":{"game_ID":input_regist_data[0], "discord_name":self.bot.get_user(int(input_regist_data[1])).display_name, "permissions":"member", "account":0}}, upsert = True)
 		if result.raw_result["nModified"] < 1 and "upserted" not in result.raw_result:
-			return await ctx.send(f"**[{input_regist_data[0]}] [{input_regist_data[1]}]**(으)로 혈원 등록 실패.")   
+			return await ctx.send(f"**[{input_regist_data[0]}] [{input_regist_data[1]}]**(으)로 길원 등록 실패.")   
 
-		return await ctx.send(f"**[{input_regist_data[0]}] [{input_regist_data[1]}]**(으)로 혈원 등록 완료!")
+		return await ctx.send(f"**[{input_regist_data[0]}] [{input_regist_data[1]}]**(으)로 길원 등록 완료!")
 
-	################ 혈원아이디 변경 ################ 
+	################ 길원아이디 변경 ################ 
 	@commands.command(name=commandSetting[54][0], aliases=commandSetting[54][1:])
 	async def member_forced_modify(self, ctx, *, args : str = None):
 		if ctx.message.channel.id != int(basicSetting[6]) or basicSetting[6] == "":
@@ -1178,7 +1178,7 @@ class memberCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":int(input_regist_data[1])})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님, 해당 아이디를 가진 혈원은 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님, 해당 아이디를 가진 길원은 등록되어 있지 않습니다!")
 
 		if member_data["game_ID"] == input_regist_data[0]:
 			return await ctx.send(f"{ctx.author.mention}님, 기존 아이디와 변경 아이디가 동일합니다!")
@@ -1226,7 +1226,7 @@ class memberCog(commands.Cog):
 
 		return await ctx.send(f"{ctx.author.mention}님, **{member_data['game_ID']}**님 아이디를 **[{input_regist_data[0]}]**로 변경하였습니다.")
 
-	################ 혈원아이디 삭제 ################ 
+	################ 길원아이디 삭제 ################ 
 	@is_manager()
 	@commands.command(name=commandSetting[10][0], aliases=commandSetting[10][1:])
 	async def member_delete(self, ctx, *, args : str = None):
@@ -1236,7 +1236,7 @@ class memberCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"game_ID":args})
 
 		if not member_data:
-			return await ctx.send(f"**[{args}]**님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"**[{args}]**님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[10][0]} [아이디]** 양식으로 삭제 해주세요")
@@ -1269,15 +1269,15 @@ class memberCog(commands.Cog):
 						
 			total_remain_money = plus_remain_money - minus_remain_money
 
-			await ctx.send(f"```잔여 등록/루팅/정산 목록이 있어 혈원을 삭제할 수 없습니다.```")
+			await ctx.send(f"```잔여 등록/루팅/정산 목록이 있어 길원을 삭제할 수 없습니다.```")
 			embed = discord.Embed(
 				title = "📜 잔여 등록/루팅/정산 목록",
 				description = f"```md\n{remain_jungsan_info}```",
 				color=0x00ff00
 				)
 			embed.add_field(name = "\u200b", value = f"은행 잔고 : 💰 **{member_data['account']}**\n정산 금액 : 💰 **{total_remain_money}**")
-			embed.add_field(name = "\u200b", value = f"잔여 목록을 `일괄정산`하고 혈원[`{args}`]을(를) `삭제` 하고 싶으면 `{int(basicSetting[5])*2}초`내로 ✅를 `클릭`해 주세요!", inline = False)
-			embed.set_footer(text = f"일괄정산 처리를 원하지 않는 경우 등록내역 수정 등을 통해 혈원[{args}]에 대한 정보를 삭제 후 다시 삭제요청 바랍니다.")
+			embed.add_field(name = "\u200b", value = f"잔여 목록을 `일괄정산`하고 길원[`{args}`]을(를) `삭제` 하고 싶으면 `{int(basicSetting[5])*2}초`내로 ✅를 `클릭`해 주세요!", inline = False)
+			embed.set_footer(text = f"일괄정산 처리를 원하지 않는 경우 등록내역 수정 등을 통해 길원[{args}]에 대한 정보를 삭제 후 다시 삭제요청 바랍니다.")
 			remain_jungsan_info_msg = await ctx.send(embed = embed)
 
 			emoji_list : list = ["✅", "❌"]
@@ -1293,7 +1293,7 @@ class memberCog(commands.Cog):
 			except asyncio.TimeoutError:
 				for emoji in emoji_list:
 					await remain_jungsan_info_msg.remove_reaction(emoji, self.bot.user)
-				return await ctx.send(f"시간이 초과됐습니다. **혈원삭제**를 취소합니다!")
+				return await ctx.send(f"시간이 초과됐습니다. **길원삭제**를 취소합니다!")
 
 			if str(reaction) == "✅":
 				for jungsan_data in jungsan_document:
@@ -1302,11 +1302,11 @@ class memberCog(commands.Cog):
 						await ctx.send(f"{ctx.author.mention}, 일괄정산 실패.") 
 				await ctx.send(f"📥 일괄정산 완료! 📥")
 			else:
-				return await ctx.send(f"**혈원삭제**를 취소하였습니다!")
+				return await ctx.send(f"**길원삭제**를 취소하였습니다!")
 
 		result = self.member_db.delete_one({"game_ID":args})
 		
-		return  await ctx.send(f"**[{args}]**님을 혈원에서 삭제 하였습니다.")
+		return  await ctx.send(f"**[{args}]**님을 길원에서 삭제 하였습니다.")
 
 class manageCog(commands.Cog): 
 	def __init__(self, bot):
@@ -1334,7 +1334,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		jungsan_document : list = []
 		if not args:
@@ -1392,8 +1392,8 @@ class manageCog(commands.Cog):
 		toggle_list : list = []
 		toggle_list = sorted(list(set([jungsan_data['toggle'] for jungsan_data in jungsan_document])))
 
-		if "혈비" in toggle_list:
-			toggle_list.remove("혈비")
+		if "길비" in toggle_list:
+			toggle_list.remove("길비")
 
 		embed = discord.Embed(
 				title = f"📜 [{member_data['game_ID']}]님 정산 내역",
@@ -1459,7 +1459,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[12][0]} [보스명] [아이템명] [루팅자] [참여자1] [참여자2]...** 양식으로 등록 해주세요")
@@ -1486,7 +1486,7 @@ class manageCog(commands.Cog):
 		gulid_money_insert_check : bool = False
 		loot_member_data : dict = {}
 
-		if input_regist_data[2] == "혈비":
+		if input_regist_data[2] == "길비":
 			gulid_money_insert_check = True
 			loot_member_data = {"_id":ctx.author.id}
 		else:
@@ -1494,7 +1494,7 @@ class manageCog(commands.Cog):
 			loot_member_data = self.member_db.find_one({"game_ID":input_regist_data[2]})
 			if not loot_member_data:
 				wrong_input_id.append(f"💥{input_regist_data[2]}")
-				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 
 		check_member_data = list(self.member_db.find())
 		for game_id in check_member_data:
@@ -1505,7 +1505,7 @@ class manageCog(commands.Cog):
 				wrong_input_id.append(game_id)
 
 		if len(wrong_input_id) > 0:
-			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 		
 		input_time : datetime = datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9]))
 		insert_data : dict = {}
@@ -1542,7 +1542,7 @@ class manageCog(commands.Cog):
 		# "before_jungsan_ID" : list = 참석명단(분배전)
 		# "after_jungsan_ID" : list = 참석명단(분배후)
 		# "modifydate" : datetime = 수정날짜
-		# "gulid_money_insert" : bool = 혈비등록여부
+		# "gulid_money_insert" : bool = 길비등록여부
 		# "bank_money_insert" : bool = 은행입금여부
 		# "ladder_check":False
 		# "image_url":이미지 url
@@ -1595,7 +1595,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[52][0]} [보스명] [아이템명] [루팅자] [뽑을인원] [참여자1] [참여자2]...** 양식으로 등록 해주세요")
@@ -1622,7 +1622,7 @@ class manageCog(commands.Cog):
 		gulid_money_insert_check : bool = False
 		loot_member_data : dict = {}
 
-		if input_regist_data[2] == "혈비":
+		if input_regist_data[2] == "길비":
 			gulid_money_insert_check = True
 			loot_member_data = {"_id":ctx.author.id}
 		else:
@@ -1630,7 +1630,7 @@ class manageCog(commands.Cog):
 			loot_member_data = self.member_db.find_one({"game_ID":input_regist_data[2]})
 			if not loot_member_data:
 				wrong_input_id.append(f"💥{input_regist_data[2]}")
-				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 
 		try:
 			ladder_num = int(input_regist_data[3])
@@ -1656,7 +1656,7 @@ class manageCog(commands.Cog):
 				wrong_input_id.append(game_id)
 
 		if len(wrong_input_id) > 0:
-			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 
 		result_before_jungsan_ID : list = []
 
@@ -1736,7 +1736,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		visual_flag : int = 0
 
@@ -1831,15 +1831,15 @@ class manageCog(commands.Cog):
 			guild_save_money : str = ""
 
 			if basicSetting[8] != 0 and jungsan_data['bank_money_insert']:
-				guild_save_money = f"[ 혈비적립 : 💰{jungsan_data['price'] - (jungsan_data['each_price'] * (len(jungsan_data['before_jungsan_ID'])+len(jungsan_data['after_jungsan_ID'])))} ]"
+				guild_save_money = f"[ 길비적립 : 💰{jungsan_data['price'] - (jungsan_data['each_price'] * (len(jungsan_data['before_jungsan_ID'])+len(jungsan_data['after_jungsan_ID'])))} ]"
 
 			if jungsan_data['gulid_money_insert']:
 				if jungsan_data['itemstatus'] == "미판매":
-					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 혈비적립예정\n[ 등록자 : {jungsan_data['regist']} ]"
-					detail_info = f"```fix\n[ 혈비적립 ]```"
+					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 길비적립예정\n[ 등록자 : {jungsan_data['regist']} ]"
+					detail_info = f"```fix\n[ 길비적립 ]```"
 				else:
-					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 혈비적립완료\n[ 등록자 : {jungsan_data['regist']} ]"
-					detail_info = f"~~```fix\n[ 혈비적립 ]```~~"
+					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 길비적립완료\n[ 등록자 : {jungsan_data['regist']} ]"
+					detail_info = f"~~```fix\n[ 길비적립 ]```~~"
 			elif jungsan_data['bank_money_insert']:
 				detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 은행저축완료\n[ 등록자 : {jungsan_data['regist']} ] {guild_save_money}"
 				detail_info = f"~~```fix\n[ 은행저축 ]```~~"
@@ -1898,7 +1898,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		visual_flag : int = 0
 
@@ -1989,15 +1989,15 @@ class manageCog(commands.Cog):
 			guild_save_money : str = ""
 
 			if basicSetting[8] != 0 and jungsan_data['bank_money_insert']:
-				guild_save_money = f"\n[ 혈비적립 : 💰{jungsan_data['price'] - (jungsan_data['each_price'] * (len(jungsan_data['before_jungsan_ID'])+len(jungsan_data['after_jungsan_ID'])))} ]"
+				guild_save_money = f"\n[ 길비적립 : 💰{jungsan_data['price'] - (jungsan_data['each_price'] * (len(jungsan_data['before_jungsan_ID'])+len(jungsan_data['after_jungsan_ID'])))} ]"
 
 			if jungsan_data['gulid_money_insert']:
 				if jungsan_data['itemstatus'] == "미판매":
-					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 혈비적립예정"
-					detail_info = f"```fix\n[ 혈비적립 ]```"
+					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 길비적립예정"
+					detail_info = f"```fix\n[ 길비적립 ]```"
 				else:
-					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 혈비적립완료"
-					detail_info = f"~~```fix\n[ 혈비적립 ]```~~"
+					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 길비적립완료"
+					detail_info = f"~~```fix\n[ 길비적립 ]```~~"
 			elif jungsan_data['bank_money_insert']:
 				detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 은행저축완료{guild_save_money}"
 				detail_info = f"~~```fix\n[ 은행저축 ]```~~"
@@ -2056,7 +2056,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[14][0]} [순번] [보스명] [아이템명] [루팅자] [참여자1] [참여자2]...** 양식으로 등록 해주세요")
@@ -2084,7 +2084,7 @@ class manageCog(commands.Cog):
 		gulid_money_insert_check : bool = False
 		loot_member_data : dict = {}
 
-		if input_regist_data[2] == "혈비":
+		if input_regist_data[2] == "길비":
 			gulid_money_insert_check = True
 			loot_member_data["_id"] = ctx.author.id
 		else:
@@ -2092,7 +2092,7 @@ class manageCog(commands.Cog):
 			loot_member_data = self.member_db.find_one({"game_ID":input_regist_data[2]})
 			if not loot_member_data:
 				wrong_input_id.append(f"💥{input_regist_data[2]}")
-				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 
 		check_member_data = list(self.member_db.find())
 		for game_id in check_member_data:
@@ -2105,7 +2105,7 @@ class manageCog(commands.Cog):
 				wrong_input_id.append(game_id)
 		
 		if len(wrong_input_id) > 0:
-			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 		
 		input_time : datetime = datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9]))
 		insert_data : dict = {}
@@ -2178,7 +2178,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[15][0]} [순번]** 양식으로 확인 해주세요")
@@ -2237,7 +2237,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		visual_flag : int = 0
 
@@ -2328,15 +2328,15 @@ class manageCog(commands.Cog):
 			guild_save_money : str = ""
 
 			if basicSetting[8] != 0 and jungsan_data['bank_money_insert']:
-				guild_save_money = f"\n[ 혈비적립 : 💰{jungsan_data['price'] - (jungsan_data['each_price'] * (len(jungsan_data['before_jungsan_ID'])+len(jungsan_data['after_jungsan_ID'])))} ]"
+				guild_save_money = f"\n[ 길비적립 : 💰{jungsan_data['price'] - (jungsan_data['each_price'] * (len(jungsan_data['before_jungsan_ID'])+len(jungsan_data['after_jungsan_ID'])))} ]"
 			
 			if jungsan_data['gulid_money_insert']:
 				if jungsan_data['itemstatus'] == "미판매":
-					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 혈비적립예정"
-					detail_info = f"```fix\n[ 혈비적립 ]```"
+					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 길비적립예정"
+					detail_info = f"```fix\n[ 길비적립 ]```"
 				else:
-					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 혈비적립완료"
-					detail_info = f"~~```fix\n[ 혈비적립 ]```~~"
+					detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 길비적립완료"
+					detail_info = f"~~```fix\n[ 길비적립 ]```~~"
 			elif jungsan_data['bank_money_insert']:
 				detail_title_info = f"[ 순번 : {jungsan_data['_id']} ] | {jungsan_data['getdate'].strftime('%y-%m-%d')} | {jungsan_data['boss']} | {jungsan_data['item']} | {jungsan_data['toggle']} | 은행저축{guild_save_money}"
 				detail_info = f"~~```fix\n[ 은행저축 ]```~~"
@@ -2395,7 +2395,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[17][0]} [순번] [보스명] [아이템명] [루팅자] [참여자1] [참여자2]...** 양식으로 등록 해주세요")
@@ -2420,7 +2420,7 @@ class manageCog(commands.Cog):
 		gulid_money_insert_check : bool = False
 		loot_member_data : dict = {}
 
-		if input_regist_data[2] == "혈비":
+		if input_regist_data[2] == "길비":
 			gulid_money_insert_check = True
 			loot_member_data["_id"] = ctx.author.id
 		else:
@@ -2428,7 +2428,7 @@ class manageCog(commands.Cog):
 			loot_member_data = self.member_db.find_one({"game_ID":input_regist_data[2]})
 			if not loot_member_data:
 				wrong_input_id.append(f"💥{input_regist_data[2]}")
-				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+				#return await ctx.send(f"```루팅자 [{input_regist_data[2]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 
 		check_member_data = list(self.member_db.find())
 		for game_id in check_member_data:
@@ -2441,7 +2441,7 @@ class manageCog(commands.Cog):
 				wrong_input_id.append(game_id)
 
 		if len(wrong_input_id) > 0:
-			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+			return await ctx.send(f"```[{', '.join(wrong_input_id)}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 		
 		input_time : datetime = datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9]))
 		insert_data : dict = {}
@@ -2514,7 +2514,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[18][0]} [순번]** 양식으로 확인 해주세요")
@@ -2570,7 +2570,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[19][0]} [순번] [보스명]** 양식으로 등록 해주세요")
@@ -2648,7 +2648,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[20][0]} [순번] [아이템명]** 양식으로 등록 해주세요")
@@ -2727,7 +2727,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[53][0]} [순번] [아이디]** 양식으로 등록 해주세요")
@@ -2751,7 +2751,7 @@ class manageCog(commands.Cog):
 
 		regist_member_data = self.member_db.find_one({"game_ID":input_regist_data[1]})
 		if not regist_member_data:
-			return await ctx.send(f"```등록자 [{input_regist_data[1]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+			return await ctx.send(f"```등록자 [{input_regist_data[1]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 
 		check_member_data = list(self.member_db.find())
 		for game_id in check_member_data:
@@ -2816,7 +2816,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[21][0]} [순번] [아이디]** 양식으로 등록 해주세요")
@@ -2842,14 +2842,14 @@ class manageCog(commands.Cog):
 		gulid_money_insert_check : bool = False
 		loot_member_data : dict = {}
 
-		if input_regist_data[1] == "혈비":
+		if input_regist_data[1] == "길비":
 			gulid_money_insert_check = True
 			loot_member_data["_id"] = ctx.author.id
 		else:
 			gulid_money_insert_check = False
 			loot_member_data = self.member_db.find_one({"game_ID":input_regist_data[1]})
 			if not loot_member_data:
-				return await ctx.send(f"```루팅자 [{input_regist_data[1]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+				return await ctx.send(f"```루팅자 [{input_regist_data[1]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 
 		check_member_data = list(self.member_db.find())
 		for game_id in check_member_data:
@@ -2914,7 +2914,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[22][0]} [순번] [아이디]** 양식으로 등록 해주세요")
@@ -2942,7 +2942,7 @@ class manageCog(commands.Cog):
 
 		check_member_data = self.member_db.find_one({"game_ID":input_regist_data[1]})
 		if not check_member_data:
-			return await ctx.send(f"```참여자 [{input_regist_data[1]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+			return await ctx.send(f"```참여자 [{input_regist_data[1]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 		
 		tmp_member_list = jungsan_data["before_jungsan_ID"].copy()
 		tmp_member_list.append(check_member_data["game_ID"])
@@ -3002,7 +3002,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[23][0]} [순번] [아이디]** 양식으로 등록 해주세요")
@@ -3030,7 +3030,7 @@ class manageCog(commands.Cog):
 
 		check_member_data = self.member_db.find_one({"game_ID":input_regist_data[1]})
 		if not check_member_data:
-			return await ctx.send(f"```참여자 [{input_regist_data[1]}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")
+			return await ctx.send(f"```참여자 [{input_regist_data[1]}](은)는 길원으로 등록되지 않은 아이디 입니다.```")
 		
 		tmp_member_list = jungsan_data["before_jungsan_ID"].copy()
 		tmp_member_list.remove(check_member_data["game_ID"])
@@ -3093,7 +3093,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[50][0]} [순번] [수정이미지 url]** 양식으로 등록 해주세요")
@@ -3175,7 +3175,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[24][0]} [순번] [금액]** 양식으로 입력 해주세요")
@@ -3200,26 +3200,26 @@ class manageCog(commands.Cog):
 		if not jungsan_data:
 			return await ctx.send(f"{ctx.author.mention}님! 등록하신 정산 내역이 **[ 미판매 ]** 중이 아니거나 없습니다. **[ {commandSetting[13][0]} ]** 명령을 통해 확인해주세요")
 
-		result_each_price = int(input_sell_price_data[1]//len(jungsan_data["before_jungsan_ID"]))   # 혈비일 경우 수수로 계산 입력 예정
+		result_each_price = int(input_sell_price_data[1]//len(jungsan_data["before_jungsan_ID"]))   # 길비일 경우 수수로 계산 입력 예정
 
 		if jungsan_data["gulid_money_insert"]:
 			after_tax_price : int = int(input_sell_price_data[1]*(1-(basicSetting[7]/100)))
 			result_each_price : int = int(after_tax_price//len(jungsan_data["before_jungsan_ID"]))
 			result = self.jungsan_db.update_one({"_id":input_sell_price_data[0]}, {"$set":{"price":after_tax_price, "each_price":int(input_sell_price_data[1]), "modifydate":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])), "before_jungsan_ID":[], "after_jungsan_ID":sorted(jungsan_data["before_jungsan_ID"]), "itemstatus":"분배완료"}}, upsert = False)
 			if result.raw_result["nModified"] < 1 and "upserted" not in result.raw_result:
-				return await ctx.send(f"{ctx.author.mention}, 혈비 등록 실패.")
+				return await ctx.send(f"{ctx.author.mention}, 길비 등록 실패.")
 			result_guild = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":after_tax_price}}, upsert = True)
 			if result_guild.raw_result["nModified"] < 1 and "upserted" not in result_guild.raw_result:
-				return await ctx.send(f"{ctx.author.mention}, 혈비 적립 실패.")
+				return await ctx.send(f"{ctx.author.mention}, 길비 적립 실패.")
 			insert_log_data = {
 						"in_out_check":True,  # True : 입금, False : 출금
 						"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
 						"money":str(after_tax_price),
 						"member_list":jungsan_data["before_jungsan_ID"],
-						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 혈비 적립"
+						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 길비 적립"
 			}
 			result_guild_log = self.guild_db_log.insert_one(insert_log_data)
-			return await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용) 혈비 적립 완료!")
+			return await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용) 길비 적립 완료!")
 		
 		result = self.jungsan_db.update_one({"_id":input_sell_price_data[0]}, {"$set":{"price":input_sell_price_data[1], "each_price":result_each_price, "modifydate":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])), "itemstatus":"분배중"}}, upsert = False)
 		if result.raw_result["nModified"] < 1 and "upserted" not in result.raw_result:
@@ -3236,7 +3236,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[45][0]} [순번] [금액] [뽑을인원]** 양식으로 입력 해주세요")
@@ -3286,19 +3286,19 @@ class manageCog(commands.Cog):
 			result_each_price : int = int(after_tax_price//input_sell_price_data[2])
 			result = self.jungsan_db.update_one({"_id":input_sell_price_data[0]}, {"$set":{"price":after_tax_price, "each_price":int(input_sell_price_data[1]), "modifydate":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])), "before_jungsan_ID":[], "after_jungsan_ID":sorted(result_ladder), "itemstatus":"분배완료", "ladder_check":ladder_check}}, upsert = False)
 			if result.raw_result["nModified"] < 1 and "upserted" not in result.raw_result:
-				return await ctx.send(f"{ctx.author.mention}, 혈비 등록 실패.")
+				return await ctx.send(f"{ctx.author.mention}, 길비 등록 실패.")
 			result_guild = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":after_tax_price}}, upsert = True)
 			if result_guild.raw_result["nModified"] < 1 and "upserted" not in result_guild.raw_result:
-				return await ctx.send(f"{ctx.author.mention}, 혈비 적립 실패.")
+				return await ctx.send(f"{ctx.author.mention}, 길비 적립 실패.")
 			insert_log_data = {
 						"in_out_check":True,  # True : 입금, False : 출금
 						"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
 						"money":str(after_tax_price),
 						"member_list":sorted(result_ladder),
-						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 혈비 적립"
+						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 길비 적립"
 			}
 			result_guild_log = self.guild_db_log.insert_one(insert_log_data)
-			return await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용) 혈비 적립 완료!")
+			return await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용) 길비 적립 완료!")
 		
 		result = self.jungsan_db.update_one({"_id":input_sell_price_data[0]}, {"$set":{"price":input_sell_price_data[1], "each_price":result_each_price, "modifydate":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])), "before_jungsan_ID":sorted(result_ladder), "itemstatus":"분배중", "ladder_check":ladder_check}}, upsert = False)
 		if result.raw_result["nModified"] < 1 and "upserted" not in result.raw_result:
@@ -3315,7 +3315,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[51][0]} [순번]** 양식으로 정산 해주세요")
@@ -3335,7 +3335,7 @@ class manageCog(commands.Cog):
 			jungsan_data : dict = self.jungsan_db.find_one({"_id":int(input_distribute_finish_data[0])})
 			if jungsan_data["gulid_money_insert"]:
 				embed = discord.Embed(
-						title = "📜 판매취소 정보(혈비등록건)",
+						title = "📜 판매취소 정보(길비등록건)",
 						description = "",
 						color=0x00ff00
 						)
@@ -3372,7 +3372,7 @@ class manageCog(commands.Cog):
 					result = self.jungsan_db.update_one({"_id":input_distribute_finish_data[0]}, {"$set":{"price":0, "each_price":0, "modifydate":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])), "itemstatus":"미판매", "before_jungsan_ID":jungsan_data["after_jungsan_ID"],"after_jungsan_ID":[] }}, upsert = False)
 					result_guild = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":-jungsan_data["price"]}}, upsert = True)
 					if result_guild.raw_result["nModified"] < 1 and "upserted" not in result_guild.raw_result:
-						return await ctx.send(f"{ctx.author.mention}, 혈비 적립 실패.")
+						return await ctx.send(f"{ctx.author.mention}, 길비 적립 실패.")
 					insert_log_data = {
 								"in_out_check":False,  # True : 입금, False : 출금
 								"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
@@ -3454,7 +3454,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[25][0]} [순번] [아이디]** 양식으로 정산 해주세요")
@@ -3511,7 +3511,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[26][0]} [순번] [아이디]** 양식으로 정산 해주세요")
@@ -3559,7 +3559,7 @@ class manageCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		jungsan_document : list = []
 
@@ -3685,7 +3685,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[34][0]} [판매금액] (거래소세금)** 양식으로 입력 해주세요\n※ 거래소세금은 미입력시 {basicSetting[7]}%입니다.")
@@ -3729,7 +3729,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[35][0]} 거래소가격] [실거래가] (거래소세금)** 양식으로 입력 해주세요\n※ 거래소세금은 미입력시 {basicSetting[7]}%입니다.")
@@ -3783,7 +3783,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		embed = discord.Embed(
 				title = f"[{member_data['game_ID']}]님 은행 잔고 📝",
@@ -3802,7 +3802,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[29][0]} [순번] [금액]** 양식으로 입력 해주세요")
@@ -3828,7 +3828,7 @@ class bankCog(commands.Cog):
 			return await ctx.send(f"{ctx.author.mention}님! 등록하신 정산 내역이 **[ 미판매 ]** 중이 아니거나 없습니다. **[ {commandSetting[13][0]}/{commandSetting[16][0]} ]** 명령을 통해 확인해주세요")
 		
 		if jungsan_document["gulid_money_insert"]:
-			return await ctx.send(f"{ctx.author.mention}님! 해당 정산 내역은 **[ 혈비 ]**로 적립 예정입니다. **[ {commandSetting[24][0]} ]** 명령을 통해 정산해 주세요!")
+			return await ctx.send(f"{ctx.author.mention}님! 해당 정산 내역은 **[ 길비 ]**로 적립 예정입니다. **[ {commandSetting[24][0]} ]** 명령을 통해 정산해 주세요!")
 		
 		after_tax_price : int = int(input_sell_price_data[1]*(1-(basicSetting[7]/100)))
 		tmp_result_each_price : int = int(after_tax_price//len(jungsan_document["before_jungsan_ID"]))
@@ -3840,13 +3840,13 @@ class bankCog(commands.Cog):
 			guild_save_money = after_tax_price - (tmp_result_each_price * len(jungsan_document["before_jungsan_ID"]))
 			result_guild = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":guild_save_money}}, upsert = True)
 			if result_guild.raw_result["nModified"] < 1 and "upserted" not in result_guild.raw_result:
-				return await ctx.send(f"{ctx.author.mention}, 혈비 적립 실패.")
+				return await ctx.send(f"{ctx.author.mention}, 길비 적립 실패.")
 			insert_log_data = {
 						"in_out_check":True,  # True : 입금, False : 출금
 						"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
 						"money":str(guild_save_money),
 						"member_list":sorted(jungsan_document["before_jungsan_ID"]),
-						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 혈비 적립"
+						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 길비 적립"
 			}
 			result_guild_log = self.guild_db_log.insert_one(insert_log_data)
 
@@ -3872,7 +3872,7 @@ class bankCog(commands.Cog):
 			return await ctx.send(f"{ctx.author.mention}, 은행 저축 실패.")		
 
 		if basicSetting[8] != 0:
-			await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용)\n**{jungsan_document['before_jungsan_ID']}**계좌로 혈비 **💰 [ {guild_save_money} ]** / 1인당 **💰 [ {result_each_price} ]** 은행 저축 완료!")
+			await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용)\n**{jungsan_document['before_jungsan_ID']}**계좌로 길비 **💰 [ {guild_save_money} ]** / 1인당 **💰 [ {result_each_price} ]** 은행 저축 완료!")
 		else:
 			await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용)\n**{jungsan_document['before_jungsan_ID']}**계좌로 1인당 **💰 [ {result_each_price} ]** 은행 저축 완료!")
 		return 
@@ -3886,7 +3886,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			return await ctx.send(f"**{commandSetting[48][0]} [순번] [금액] [뽑을인원]** 양식으로 입력 해주세요")
@@ -3913,7 +3913,7 @@ class bankCog(commands.Cog):
 			return await ctx.send(f"{ctx.author.mention}님! 등록하신 정산 내역이 **[ 미판매 ]** 중이 아니거나 없습니다. **[ {commandSetting[13][0]}/{commandSetting[16][0]} ]** 명령을 통해 확인해주세요")
 
 		if jungsan_document["gulid_money_insert"]:
-			return await ctx.send(f"{ctx.author.mention}님! 해당 정산 내역은 **[ 혈비 ]**로 적립 예정입니다. **[ {commandSetting[24][0]} ]** 명령을 통해 정산해 주세요!")
+			return await ctx.send(f"{ctx.author.mention}님! 해당 정산 내역은 **[ 길비 ]**로 적립 예정입니다. **[ {commandSetting[24][0]} ]** 명령을 통해 정산해 주세요!")
 		
 		if input_sell_price_data[2] < 1:
 			return await ctx.send(f"{ctx.author.mention}님! 추첨인원이 0보다 작거나 같습니다. 재입력 해주세요")
@@ -3943,13 +3943,13 @@ class bankCog(commands.Cog):
 			guild_save_money = after_tax_price - (tmp_result_each_price * input_sell_price_data[2])
 			result_guild = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":guild_save_money}}, upsert = True)
 			if result_guild.raw_result["nModified"] < 1 and "upserted" not in result_guild.raw_result:
-				return await ctx.send(f"{ctx.author.mention}, 혈비 적립 실패.")
+				return await ctx.send(f"{ctx.author.mention}, 길비 적립 실패.")
 			insert_log_data = {
 						"in_out_check":True,  # True : 입금, False : 출금
 						"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
 						"money":str(guild_save_money),
 						"member_list":sorted(result_ladder),
-						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 혈비 적립"
+						"reason":f"[순번:{input_sell_price_data[0]}] - 정산금 길비 적립"
 			}
 			result_guild_log = self.guild_db_log.insert_one(insert_log_data)
 
@@ -3976,7 +3976,7 @@ class bankCog(commands.Cog):
 			return await ctx.send(f"{ctx.author.mention}, 은행 저축 실패.")		
 
 		if basicSetting[8] != 0:
-			await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용)\n**{participant_list}**계좌로 혈비 **💰 [ {guild_save_money} ]** / 1인당 **💰 [ {result_each_price} ]** 은행 저축 완료!")
+			await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용)\n**{participant_list}**계좌로 길비 **💰 [ {guild_save_money} ]** / 1인당 **💰 [ {result_each_price} ]** 은행 저축 완료!")
 		else:
 			await ctx.send(f"**[ 순번 : {input_sell_price_data[0]} ]**   💰판매금 **[ {after_tax_price} ]**(세율 {basicSetting[7]}% 적용)\n**{participant_list}**계좌로 1인당 **💰 [ {result_each_price} ]** 은행 저축 완료!")
 		return
@@ -3991,7 +3991,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 			
 		if not args:
 			return await ctx.send(f"**{commandSetting[30][0]} [금액] [아이디] [아이디]...** 양식으로 입력 해주세요")
@@ -4020,7 +4020,7 @@ class bankCog(commands.Cog):
 				wrong_input_id.append(game_id)
 
 		if len(wrong_input_id) > 0:
-			return await ctx.send(f"```입금자 [{', '.join(wrong_input_id)}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")	
+			return await ctx.send(f"```입금자 [{', '.join(wrong_input_id)}](은)는 길원으로 등록되지 않은 아이디 입니다.```")	
 
 		result_update = self.member_db.update_many({"game_ID":{"$in":input_bank_deposit_data[1:]}}, {"$inc":{"account":input_bank_deposit_data[0]}})
 		if result_update.modified_count != len(input_bank_deposit_data[1:]):
@@ -4038,7 +4038,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 			
 		if not args:
 			return await ctx.send(f"**{commandSetting[31][0]} [금액] [아이디] [아이디]...** 양식으로 입력 해주세요")
@@ -4067,7 +4067,7 @@ class bankCog(commands.Cog):
 				wrong_input_id.append(game_id)
 
 		if len(wrong_input_id) > 0:
-			return await ctx.send(f"```출금자 [{', '.join(wrong_input_id)}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")	
+			return await ctx.send(f"```출금자 [{', '.join(wrong_input_id)}](은)는 길원으로 등록되지 않은 아이디 입니다.```")	
 
 		result_update = self.member_db.update_many({"game_ID":{"$in":input_bank_withdraw_data[1:]}}, {"$inc":{"account":-input_bank_withdraw_data[0]}})
 
@@ -4076,7 +4076,7 @@ class bankCog(commands.Cog):
 
 		return await ctx.send(f"```ml\n{input_bank_withdraw_data[1:]}님 💰[{input_bank_withdraw_data[0]}] 은행 출금 완료!.```")
 
-	################ 혈비입금 #################
+	################ 길비입금 #################
 	@is_manager() 
 	@commands.command(name=commandSetting[32][0], aliases=commandSetting[32][1:])
 	async def guild_support_money_save(self, ctx, *, args : str = None):
@@ -4086,7 +4086,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 			
 		if not args:
 			return await ctx.send(f"**{commandSetting[32][0]} [금액] (*사유)** 양식으로 입력 해주세요")
@@ -4104,7 +4104,7 @@ class bankCog(commands.Cog):
 
 		result_guild_update : dict = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":args}}, upsert = True)
 		if result_guild_update.raw_result["nModified"] < 1 and "upserted" not in result_guild_update.raw_result:
-			return await ctx.send(f"```혈비 입금 실패!```")
+			return await ctx.send(f"```길비 입금 실패!```")
 		insert_log_data = {
 					"in_out_check":True,  # True : 입금, False : 출금
 					"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
@@ -4117,17 +4117,17 @@ class bankCog(commands.Cog):
 		total_guild_money : dict = self.guild_db.find_one({"_id":"guild"})
 
 		embed = discord.Embed(
-				title = f"💰  혈비 입금 완료",
+				title = f"💰  길비 입금 완료",
 				description = f"",
 				color=0x00ff00
 				)
 		embed.add_field(name = f"**입금**", value = f"**```fix\n{args}```**")
-		embed.add_field(name = f"**혈비**", value = f"**```fix\n{total_guild_money['guild_money']}```**")
+		embed.add_field(name = f"**길비**", value = f"**```fix\n{total_guild_money['guild_money']}```**")
 		if reason != "":
 			embed.add_field(name = f"**사유**", value = f"**```fix\n{reason}```**", inline=False)
 		return await ctx.send(embed = embed)
 
-	################ 혈비출금 #################
+	################ 길비출금 #################
 	@is_manager() 
 	@commands.command(name=commandSetting[49][0], aliases=commandSetting[49][1:])
 	async def guild_support_money_withdraw(self, ctx, *, args : str = None):
@@ -4137,7 +4137,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 			
 		if not args:
 			return await ctx.send(f"**{commandSetting[49][0]} [금액]** 양식으로 입력 해주세요")
@@ -4153,7 +4153,7 @@ class bankCog(commands.Cog):
 
 		result_guild_update : dict = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":-guild_support_money_withdraw_data[0]}}, upsert = True)
 		if result_guild_update.raw_result["nModified"] < 1 and "upserted" not in result_guild_update.raw_result:
-			return await ctx.send(f"```혈비 출금 실패!```")
+			return await ctx.send(f"```길비 출금 실패!```")
 		insert_log_data = {
 					"in_out_check":False,  # True : 입금, False : 출금
 					"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
@@ -4166,15 +4166,15 @@ class bankCog(commands.Cog):
 		total_guild_money : dict = self.guild_db.find_one({"_id":"guild"})
 
 		embed = discord.Embed(
-				title = f"💰  혈비 출금 완료",
+				title = f"💰  길비 출금 완료",
 				description = f"",
 				color=0x00ff00
 				)
 		embed.add_field(name = f"**출금**", value = f"**```fix\n{guild_support_money_withdraw_data[0]}```**")
-		embed.add_field(name = f"**혈비**", value = f"**```fix\n{total_guild_money['guild_money']}```**")
+		embed.add_field(name = f"**길비**", value = f"**```fix\n{total_guild_money['guild_money']}```**")
 		return await ctx.send(embed = embed)
 
-	################ 혈비지원 #################
+	################ 길비지원 #################
 	@is_manager() 
 	@commands.command(name=commandSetting[33][0], aliases=commandSetting[33][1:])
 	async def guild_support_money(self, ctx, *, args : str = None):
@@ -4184,12 +4184,12 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		guild_data : dict = self.guild_db.find_one({"_id":"guild"})
 
 		if not guild_data:
-			return await ctx.send(f"등록된 혈비가 없습니다!")
+			return await ctx.send(f"등록된 길비가 없습니다!")
 			
 		if not args:
 			return await ctx.send(f"**{commandSetting[33][0]} [금액] [아이디1] [아이디2] ... *[사유]** 양식으로 입력 해주세요")
@@ -4220,12 +4220,12 @@ class bankCog(commands.Cog):
 				wrong_input_id.append(game_id)
 
 		if len(wrong_input_id) > 0:
-			return await ctx.send(f"```지원자 [{', '.join(wrong_input_id)}](은)는 혈원으로 등록되지 않은 아이디 입니다.```")	
+			return await ctx.send(f"```지원자 [{', '.join(wrong_input_id)}](은)는 길원으로 등록되지 않은 아이디 입니다.```")	
 
 		result_update = self.member_db.update_many({"game_ID":{"$in":input_guild_support_money_ID_data[1:]}}, {"$inc":{"account":input_guild_support_money_ID_data[0]}})
 
 		if result_update.modified_count != len(input_guild_support_money_ID_data[1:]):
-			return await ctx.send(f"```혈비 지원 실패. 정확한 [아이디]를 입력 후 다시 시도 해보세요!```")
+			return await ctx.send(f"```길비 지원 실패. 정확한 [아이디]를 입력 후 다시 시도 해보세요!```")
 		insert_log_data = {
 					"in_out_check":False, # True : 입금, False : 출금
 					"log_date":datetime.datetime.now() + datetime.timedelta(hours = int(basicSetting[9])),
@@ -4239,11 +4239,11 @@ class bankCog(commands.Cog):
 
 		result_guild_update = self.guild_db.update_one({"_id":"guild"}, {"$inc":{"guild_money":-total_support_money}}, upsert = False)
 		if result_guild_update.raw_result["nModified"] < 1 and "upserted" not in result_guild_update.raw_result:
-			return await ctx.send(f"```혈비 지원 실패!```")
+			return await ctx.send(f"```길비 지원 실패!```")
 
 		embed = discord.Embed(
-				title = f"🤑 혈비 지원 완료",
-				description = f"```css\n[{input_guild_support_money_data[1]}] 사유로 💰[{input_guild_support_money_ID_data[0]}]씩 혈비에서 지원했습니다.```",
+				title = f"🤑 길비 지원 완료",
+				description = f"```css\n[{input_guild_support_money_data[1]}] 사유로 💰[{input_guild_support_money_ID_data[0]}]씩 길비에서 지원했습니다.```",
 				color=0x00ff00
 				)
 		embed.add_field(name = f"**👥  명단**", value = f"**```fix\n{', '.join(input_guild_support_money_ID_data[1:])}```**")
@@ -4260,7 +4260,7 @@ class bankCog(commands.Cog):
 		member_data : dict = self.member_db.find_one({"_id":ctx.author.id})
 
 		if not member_data:
-			return await ctx.send(f"{ctx.author.mention}님은 혈원으로 등록되어 있지 않습니다!")
+			return await ctx.send(f"{ctx.author.mention}님은 길원으로 등록되어 있지 않습니다!")
 
 		if not args:
 			pipeline = [
